@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>POV · Watch</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:    #E8001C;
+    --bg:     #000;
+    --fg:     #fff;
+    --fg2:    rgba(255,255,255,0.55);
+    --fg3:    rgba(255,255,255,0.3);
+    --border: rgba(255,255,255,0.12);
+    --radius: 6px;
+  }
+
+  html, body {
+    width: 100%; height: 100dvh;
+    background: #000;
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ── Full-screen canvas ── */
+  #stage {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* ── HUD overlay ── */
+  .hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Top bar */
+  .hud-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px env(safe-area-inset-right,16px) 20px env(safe-area-inset-left,16px);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
+    pointer-events: auto;
+  }
+  .hud-logo {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #fff;
+    text-decoration: none;
+  }
+  .hud-logo span { color: var(--red); }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #fff;
+    background: var(--red);
+    padding: 5px 11px;
+    border-radius: 100px;
+    text-transform: uppercase;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fff;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+  .code-pill {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--fg2);
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-family: 'SF Mono', monospace;
+  }
+
+  /* Bottom bar */
+  .hud-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .status-text {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--fg2);
+  }
+  .viewer-count {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--fg2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* ── Waiting / connecting overlay ── */
+  #waitOverlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 20;
+    transition: opacity 0.6s ease;
+  }
+  #waitOverlay.hidden { opacity: 0; pointer-events: none; }
+
+  .wait-icon {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(232,0,28,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(232,0,28,0.3);
+  }
+  .wait-icon svg { color: var(--red); }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #waitTitle {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  #waitSub {
+    font-size: 14px;
+    color: var(--fg2);
+    text-align: center;
+    max-width: 300px;
+    line-height: 1.6;
+  }
+  .back-link {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--fg3);
+    text-decoration: none;
+    margin-top: 12px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--fg2); }
+</style>
+</head>
+<body>
+
+<!-- Full-screen frame canvas -->
+<div id="stage">
+  <canvas id="canvas"></canvas>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-top">
+    <a class="hud-logo" href="/"><span>POV</span> · LIVE</a>
+    <div class="live-badge" id="liveBadge" style="display:none">
+      <span class="live-dot"></span> LIVE
+    </div>
+    <span class="code-pill" id="codePill"></span>
+  </div>
+  <div class="hud-bottom">
+    <span class="status-text" id="statusText">Connecting…</span>
+    <span class="viewer-count" id="viewerCount" style="display:none">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span id="viewerNum"></span>
+    </span>
+  </div>
+</div>
+
+<!-- Waiting / connecting overlay -->
+<div id="waitOverlay">
+  <div class="wait-icon">
+    <div class="spinner" id="waitSpinner"></div>
+  </div>
+  <div id="waitTitle">Connecting…</div>
+  <div id="waitSub">Looking for the live stream for your show.</div>
+  <a class="back-link" href="/">← Back to home</a>
+</div>
+
+<script src="/config.js"></script>
+<script>
+(function () {
+  const params   = new URLSearchParams(location.search);
+  const showCode = (params.get('code') || '').toUpperCase().trim();
+
+  // Redirect home if no code
+  if (!showCode) { window.location.href = '/'; return; }
+
+  // Update UI with code
+  document.getElementById('codePill').textContent = showCode;
+  document.title = `POV · ${showCode}`;
+
+  const RELAY = (window.POV_CONFIG?.RELAY_URL || 'wss://pov-relay.onrender.com');
+
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  const overlay = document.getElementById('waitOverlay');
+  const statusEl = document.getElementById('statusText');
+  const liveBadge = document.getElementById('liveBadge');
+  const viewerCount = document.getElementById('viewerCount');
+  const viewerNum = document.getElementById('viewerNum');
+  const waitTitle = document.getElementById('waitTitle');
+  const waitSub = document.getElementById('waitSub');
+
+  let ws = null;
+  let isStreaming = false;
+  let reconnectTimer = null;
+  let frameCount = 0;
+  let lastFrameTime = 0;
+  let fpsDisplay = '—';
+
+  function setStatus(msg) { statusEl.textContent = msg; }
+  function showOverlay(title, sub) {
+    waitTitle.textContent = title;
+    waitSub.textContent = sub;
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay() { overlay.classList.add('hidden'); }
+
+  function connect() {
+    if (ws) { try { ws.close(); } catch (_) {} }
+    const url = `${RELAY}/relay?show=${encodeURIComponent(showCode)}&role=audience`;
+    ws = new WebSocket(url);
+    ws.binaryType = 'arraybuffer';
+
+    setStatus('Connecting…');
+    showOverlay('Connecting…', `Joining show ${showCode}…`);
+
+    ws.onopen = () => {
+      setStatus('Waiting for stream…');
+      showOverlay('Waiting for stream', 'The director will activate a camera soon.');
+    };
+
+    ws.onmessage = (e) => {
+      if (typeof e.data === 'string') {
+        handleControl(JSON.parse(e.data));
+        return;
+      }
+      // Binary = JPEG frame
+      renderFrame(e.data);
+    };
+
+    ws.onclose = () => {
+      isStreaming = false;
+      liveBadge.style.display = 'none';
+      showOverlay('Disconnected', 'Lost connection. Reconnecting…');
+      setStatus('Reconnecting…');
+      reconnectTimer = setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => {
+      setStatus('Connection error');
+    };
+  }
+
+  function handleControl(msg) {
+    if (msg.type === 'active_cam') {
+      setStatus('Stream active');
+    } else if (msg.type === 'no_active_cam') {
+      isStreaming = false;
+      liveBadge.style.display = 'none';
+      showOverlay('Waiting for stream', 'No camera is selected right now. Stand by.');
+      setStatus('Waiting for camera…');
+    } else if (msg.type === 'show_info') {
+      setStatus(msg.camCount > 0
+        ? `${msg.camCount} camera${msg.camCount !== 1 ? 's' : ''} online`
+        : 'Waiting for cameras…');
+    }
+  }
+
+  function renderFrame(buffer) {
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = () => {
+      // Size canvas to image on first frame
+      if (canvas.width !== img.naturalWidth) {
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+      }
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      if (!isStreaming) {
+        isStreaming = true;
+        hideOverlay();
+        liveBadge.style.display = '';
+        setStatus('Streaming live');
+      }
+
+      // FPS tracking (shown in status)
+      frameCount++;
+      const now = Date.now();
+      if (now - lastFrameTime >= 1000) {
+        fpsDisplay = frameCount;
+        frameCount = 0;
+        lastFrameTime = now;
+        setStatus(`${fpsDisplay} fps`);
+      }
+    };
+    img.src = url;
+  }
+
+  // Resize canvas to fill viewport on window resize
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    // canvas CSS size always = window; internal size set per-frame
+    canvas.style.width  = '100%';
+    canvas.style.height = '100%';
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  connect();
+})();
+</script>
+</body>
+</html>

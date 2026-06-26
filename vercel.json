@@ -1,1 +1,12 @@
-{"headers":[{"source":"/.well-known/apple-app-site-association","headers":[{"key":"Content-Type","value":"application/json"}]}]}
+{
+  "rewrites": [
+    { "source": "/watch",    "destination": "/watch/index.html" },
+    { "source": "/director", "destination": "/director/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
+    }
+  ]
+}

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="POV · Live Concerts">
+<meta property="og:description" content="See the show through the eyes of fans wearing Ray-Ban Meta glasses.">
+<meta property="og:image" content="/og-image.jpg">
+<title>POV · Live Concerts</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:    #E8001C;
+    --red-dk: #b50016;
+    --bg:     #000;
+    --bg1:    #0f0f0f;
+    --bg2:    #1a1a1a;
+    --fg:     #fff;
+    --fg2:    rgba(255,255,255,0.55);
+    --fg3:    rgba(255,255,255,0.3);
+    --border: rgba(255,255,255,0.1);
+    --radius: 6px;
+  }
+
+  html, body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Layout ── */
+  .page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Nav ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .logo {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .logo span { color: var(--red); }
+  .nav-link {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--fg2);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nav-link:hover { color: var(--fg); border-color: rgba(255,255,255,0.3); }
+
+  /* ── Hero ── */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 28px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(232,0,28,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--red);
+    padding: 5px 12px;
+    border: 1px solid rgba(232,0,28,0.35);
+    border-radius: 100px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-size: clamp(40px, 9vw, 88px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  h1 em { font-style: normal; color: var(--red); }
+
+  .subtitle {
+    font-size: clamp(15px, 2.5vw, 19px);
+    color: var(--fg2);
+    line-height: 1.6;
+    max-width: 480px;
+    margin-bottom: 56px;
+  }
+
+  /* ── Code entry card ── */
+  .card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    z-index: 1;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--fg3);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+  }
+  .code-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--fg);
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    text-align: center;
+  }
+  .code-input::placeholder { color: var(--fg3); letter-spacing: 0.1em; font-size: 18px; }
+  .code-input:focus { border-color: var(--red); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+    width: 100%;
+    margin-top: 14px;
+    padding: 16px;
+    font-size: 14px;
+  }
+  .btn-primary:hover { background: var(--red-dk); }
+  .btn-primary:disabled {
+    background: var(--bg2);
+    color: var(--fg3);
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--fg2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--fg); border-color: rgba(255,255,255,0.25); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: var(--fg3);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .director-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    color: var(--fg2);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .director-link:hover { color: var(--fg); border-color: rgba(255,255,255,0.25); }
+  .director-link svg { opacity: 0.6; }
+
+  /* ── How it works ── */
+  .how {
+    padding: 80px 28px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--fg3);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+  }
+  .step {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+  }
+  .step-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--red);
+    margin-bottom: 14px;
+  }
+  .step h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .step p {
+    font-size: 14px;
+    color: var(--fg2);
+    line-height: 1.6;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer-logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--fg2);
+  }
+  .footer-logo span { color: var(--red); }
+  footer small {
+    font-size: 11px;
+    color: var(--fg3);
+  }
+  .app-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: border-color 0.2s;
+  }
+  .app-badge:hover { border-color: rgba(255,255,255,0.25); }
+
+  @media (max-width: 480px) {
+    .card { padding: 24px 20px; border-radius: 12px; }
+    nav { padding: 16px 20px; }
+    footer { justify-content: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav>
+    <a class="logo" href="/"><span>POV</span> · LIVE</a>
+    <a class="nav-link" href="/director">Director</a>
+  </nav>
+
+  <section class="hero">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Live Fan Perspective
+    </div>
+
+    <h1>See the show<br>from <em>inside</em> it</h1>
+    <p class="subtitle">
+      Watch live concerts through the eyes of fans wearing
+      Ray-Ban Meta glasses — real perspective, zero screens in the way.
+    </p>
+
+    <div class="card">
+      <div class="card-title">Enter your show code</div>
+      <input
+        class="code-input"
+        id="codeInput"
+        type="text"
+        maxlength="8"
+        placeholder="ABC123"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+      >
+      <button class="btn btn-primary" id="watchBtn" disabled onclick="goWatch()">
+        Watch Live &rarr;
+      </button>
+
+      <div class="divider">or</div>
+
+      <a class="director-link" href="/director">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Director dashboard
+      </a>
+    </div>
+  </section>
+
+  <section class="how">
+    <div class="section-title">How it works</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Get a code</h3>
+        <p>Your show organizer shares a 6-character code before the event. Keep it handy.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Enter it here</h3>
+        <p>Type the code above and tap Watch Live. Works on any browser — phone, tablet, laptop.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>See the show</h3>
+        <p>Watch a live feed from fan-worn Ray-Ban glasses, streamed in real time from the crowd.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="footer-logo"><span>POV</span> · Live Concerts</span>
+    <a class="app-badge" href="#" onclick="openApp(event)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      Download iOS App
+    </a>
+    <small>povliveconcerts.com</small>
+  </footer>
+
+</div>
+
+<script src="/config.js"></script>
+<script>
+  const input   = document.getElementById('codeInput');
+  const watchBtn = document.getElementById('watchBtn');
+
+  // Check URL param (e.g., /?code=ABC123)
+  const urlCode = new URLSearchParams(location.search).get('code');
+  if (urlCode) {
+    input.value = urlCode.toUpperCase().trim();
+    watchBtn.disabled = input.value.length < 3;
+  }
+
+  input.addEventListener('input', () => {
+    input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    watchBtn.disabled = input.value.length < 3;
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !watchBtn.disabled) goWatch();
+  });
+
+  function goWatch() {
+    const code = input.value.trim();
+    if (!code) return;
+    window.location.href = '/watch?code=' + encodeURIComponent(code);
+  }
+
+  function openApp(e) {
+    e.preventDefault();
+    window.location.href = window.POV_CONFIG?.APP_STORE || '#';
+  }
+</script>
+</body>
+</html>
