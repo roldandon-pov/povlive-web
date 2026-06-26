@@ -310,6 +310,46 @@
   let frameCount = 0;
   let lastFrameTime = 0;
 
+  // Latest-frame-only render — prevents queue buildup that causes compounding lag.
+  // createImageBitmap decodes JPEG off the main thread (much faster than new Image()).
+  let pendingBuffer = null;
+  let decoding = false;
+
+  function scheduleRender(buffer) {
+    pendingBuffer = buffer; // always keep newest, discard any queued
+    if (!decoding) pump();
+  }
+
+  function pump() {
+    if (!pendingBuffer) { decoding = false; return; }
+    decoding = true;
+    const buf = pendingBuffer;
+    pendingBuffer = null;
+    const blob = new Blob([buf], { type: 'image/jpeg' });
+    createImageBitmap(blob).then(bitmap => {
+      if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+        canvas.width  = bitmap.width;
+        canvas.height = bitmap.height;
+      }
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+
+      if (!isStreaming) {
+        isStreaming = true;
+        hideOverlay();
+        liveBadge.style.display = '';
+      }
+      frameCount++;
+      const now = Date.now();
+      if (now - lastFrameTime >= 1000) {
+        setStatus(`${frameCount} fps`);
+        frameCount = 0;
+        lastFrameTime = now;
+      }
+      pump(); // immediately drain next if arrived during decode
+    }).catch(() => { decoding = false; });
+  }
+
   function setStatus(msg) { statusEl.textContent = msg; }
 
   function showOverlay(title, sub) {
@@ -355,7 +395,7 @@
 
     ws.onmessage = (e) => {
       if (typeof e.data === 'string') { handleControl(JSON.parse(e.data)); return; }
-      renderFrame(e.data);
+      scheduleRender(e.data);
     };
 
     ws.onclose = () => {
@@ -382,35 +422,6 @@
         ? `${msg.camCount} camera${msg.camCount !== 1 ? 's' : ''} online`
         : 'Waiting for cameras…');
     }
-  }
-
-  function renderFrame(buffer) {
-    const blob = new Blob([buffer], { type: 'image/jpeg' });
-    const url  = URL.createObjectURL(blob);
-    const img  = new Image();
-    img.onload = () => {
-      if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
-        canvas.width  = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-      }
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-
-      if (!isStreaming) {
-        isStreaming = true;
-        hideOverlay();
-        liveBadge.style.display = '';
-      }
-
-      frameCount++;
-      const now = Date.now();
-      if (now - lastFrameTime >= 1000) {
-        setStatus(`${frameCount} fps`);
-        frameCount = 0;
-        lastFrameTime = now;
-      }
-    };
-    img.src = url;
   }
 
   connect();
